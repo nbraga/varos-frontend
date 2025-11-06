@@ -1,7 +1,7 @@
 "use client";
 
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Users } from "lucide-react";
+import Image from "next/image";
 
 export const Header = () => {
   return (
@@ -9,16 +9,14 @@ export const Header = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Users className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">
-                Dashboard de Usuários
-              </h1>
-              <p className="text-muted-foreground">
-                Gerencie todos os usuários do sistema
-              </p>
+            <div className="relative h-16 w-16  ">
+              <Image
+                src="/logo-varos.png"
+                alt="Varos Logo"
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
           </div>
           <div className="flex items-center gap-2">
