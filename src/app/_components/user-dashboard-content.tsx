@@ -4,83 +4,55 @@ import { UserDialog } from "@/app/_components/user-dialog";
 import { UserFilters } from "@/app/_components/user-filters";
 import { UserTable } from "@/app/_components/user-table";
 import type { UserFormData } from "@/app/schemas/user";
-import { mockUsers } from "@/data/mockUsers";
+import {
+  useCreateUser,
+  useDeleteUser,
+  useUpdateUser,
+  useUsers,
+} from "@/hooks/use-users";
 import type { User } from "@/interfaces/user";
 import { useState } from "react";
 import { DateRange } from "react-day-picker";
-import { toast } from "sonner";
 
 export const UserDashboardContent = () => {
-  const [users, setUsers] = useState<User[]>(mockUsers);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-
   const [searchFilter, setSearchFilter] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+  const { data: users = [], isLoading } = useUsers(searchFilter);
+  const createUser = useCreateUser();
+  const updateUser = useUpdateUser();
+  const deleteUser = useDeleteUser();
 
   const availableClients = users.filter((u) => u.type === "Cliente");
 
   const handleCreateUser = (data: UserFormData) => {
-    const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      cpf: data.cpf,
-      age: data.age,
-      address: {
-        street: data.address.street,
-        number: data.address.number,
-        neighborhood: data.address.neighborhood,
-        city: data.address.city,
-        state: data.address.state,
-        zipCode: data.address.zipCode,
+    createUser.mutate(data, {
+      onSuccess: () => {
+        setDialogOpen(false);
       },
-      type: data.type,
-      clientIds: data.clientIds,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    setUsers([...users, newUser]);
-    setDialogOpen(false);
-    toast.success("Usuário criado com sucesso!");
+    });
   };
 
   const handleUpdateUser = (data: UserFormData) => {
     if (!editingUser) return;
 
-    const updatedUsers = users.map((user) =>
-      user.id === editingUser.id
-        ? {
-            ...user,
-            name: data.name,
-            email: data.email,
-            phone: data.phone,
-            cpf: data.cpf,
-            age: data.age,
-            address: {
-              street: data.address.street,
-              number: data.address.number,
-              neighborhood: data.address.neighborhood,
-              city: data.address.city,
-              state: data.address.state,
-              zipCode: data.address.zipCode,
-            },
-            type: data.type,
-            clientIds: data.clientIds,
-            updatedAt: new Date(),
-          }
-        : user
+    updateUser.mutate(
+      { id: editingUser.id, data },
+      {
+        onSuccess: () => {
+          setDialogOpen(false);
+          setEditingUser(null);
+        },
+      }
     );
-    setUsers(updatedUsers);
-    setDialogOpen(false);
-    setEditingUser(null);
-    toast.success("Usuário atualizado com sucesso!");
   };
 
   const handleDeleteUser = (userId: string) => {
-    setUsers(users.filter((user) => user.id !== userId));
-    toast.success("Usuário removido com sucesso!");
+    if (confirm("Tem certeza que deseja deletar este usuário?")) {
+      deleteUser.mutate(userId);
+    }
   };
 
   const handleEditClick = (user: User) => {
@@ -94,6 +66,20 @@ export const UserDashboardContent = () => {
       setEditingUser(null);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            Carregando usuários...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <UserFilters
@@ -104,7 +90,7 @@ export const UserDashboardContent = () => {
       />
 
       <UserTable
-        users={[]}
+        users={users}
         onEdit={handleEditClick}
         onDelete={handleDeleteUser}
       />

@@ -11,7 +11,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <ThemeProvider
       attribute="class"
       defaultTheme="light"
-      themes={["light", "dark", "purchaser", "provider"]}
+      themes={["light", "dark"]}
     >
       <AppProvider>
         <ReactQueryProvider>{children}</ReactQueryProvider>

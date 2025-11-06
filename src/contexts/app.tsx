@@ -1,9 +1,6 @@
 "use client";
 
-import { useTheme } from "@/hooks/use-theme";
-
 import { getCookie } from "cookies-next/client";
-import { useRouter } from "next/navigation";
 import { createContext } from "react";
 
 interface AppContextData {
@@ -17,10 +14,7 @@ interface AppProviderProps {
 export const AppContext = createContext<AppContextData>({} as AppContextData);
 
 export function AppProvider({ children }: AppProviderProps) {
-  const router = useRouter();
-  const { setTheme } = useTheme();
-
-  const token = getCookie("@clics.token");
+  const token = getCookie("@varos.token");
 
   return (
     <AppContext.Provider
