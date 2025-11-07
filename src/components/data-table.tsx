@@ -35,6 +35,7 @@ interface DataTableProps<TData, TValue> {
   setPagination: (
     updater: PaginationState | ((old: PaginationState) => PaginationState)
   ) => void;
+  meta?: Record<string, unknown>;
 }
 
 export function DataTable<TData, TValue>({
@@ -45,6 +46,7 @@ export function DataTable<TData, TValue>({
   total,
   setPagination,
   pagination,
+  meta,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -66,6 +68,7 @@ export function DataTable<TData, TValue>({
     manualPagination: true,
     onPaginationChange: setPagination,
     pageCount: pages,
+    meta,
     state: {
       sorting,
       columnVisibility,

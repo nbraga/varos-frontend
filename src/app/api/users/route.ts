@@ -1,53 +1,25 @@
+import { fetchUsers } from "@/app/actions/user";
 import { prisma } from "@/lib/prisma";
-import type { User } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const search = searchParams.get("search");
-    const type = searchParams.get("type");
 
-    const users = await prisma.user.findMany({
-      where: {
-        ...(search && {
-          OR: [
-            { name: { contains: search, mode: "insensitive" } },
-            { email: { contains: search, mode: "insensitive" } },
-            { cpf: { contains: search, mode: "insensitive" } },
-          ],
-        }),
-        ...(type && { type: type as "CLIENTE" | "CONSULTOR" }),
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
+    const result = await fetchUsers({
+      search: searchParams.get("search") || "",
+      order: (searchParams.get("order") as "asc" | "desc") || "asc",
+      page: Number(searchParams.get("page")) || 1,
+      limit: Number(searchParams.get("limit")) || 10,
+      type:
+        searchParams.get("type") === "Cliente" ||
+        searchParams.get("type") === "Consultor"
+          ? (searchParams.get("type") as "Cliente" | "Consultor")
+          : undefined,
     });
 
-    const formattedUsers = users.map((user: User) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      cpf: user.cpf,
-      age: user.age,
-      address: {
-        street: user.street,
-        number: user.number,
-        neighborhood: user.neighborhood,
-        city: user.city,
-        state: user.state,
-        zipCode: user.zipCode,
-      },
-      type: user.type === "CLIENTE" ? "Cliente" : "Consultor",
-      clientIds: user.clientIds,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    }));
-
-    return NextResponse.json(formattedUsers);
+    return NextResponse.json(result);
   } catch (error) {
-    console.error("Erro ao buscar usuários:", error);
     return NextResponse.json(
       { error: "Erro ao buscar usuários" },
       { status: 500 }

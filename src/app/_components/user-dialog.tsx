@@ -27,16 +27,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { User } from "@/interfaces/user";
-import { useEffect } from "react";
+import type { User, UserFormattedDataProps } from "@/interfaces/user";
+import { formatCEP, searchCEP } from "@/utils/cep-search";
+import { cpfMask } from "@/utils/cpf-mask";
+import { phoneMask } from "@/utils/phone-mask";
+import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 interface UserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: UserFormData) => void;
-  user?: User | null;
-  availableClients: User[];
+  user?: User | UserFormattedDataProps | null;
+  availableClients: User[] | UserFormattedDataProps[];
+  isLoading?: boolean;
 }
 
 export function UserDialog({
@@ -45,7 +51,10 @@ export function UserDialog({
   onSubmit,
   user,
   availableClients,
+  isLoading = false,
 }: UserDialogProps) {
+  const [isSearchingCEP, setIsSearchingCEP] = useState(false);
+
   const form = useForm({
     defaultValues: {
       name: "",
@@ -65,6 +74,32 @@ export function UserDialog({
       clientIds: [] as string[],
     },
   });
+
+  const handleCEPSearch = async (cep: string) => {
+    const cleanCEP = cep.replace(/\D/g, "");
+
+    if (cleanCEP.length === 8) {
+      setIsSearchingCEP(true);
+      try {
+        const data = await searchCEP(cleanCEP);
+
+        if (data) {
+          form.setValue("address.street", data.logradouro);
+          form.setValue("address.neighborhood", data.bairro);
+          form.setValue("address.city", data.localidade);
+          form.setValue("address.state", data.uf);
+          toast.success("CEP encontrado com sucesso!");
+        } else {
+          toast.error("CEP não encontrado. Preencha manualmente.");
+        }
+      } catch (error) {
+        toast.error("Erro ao buscar CEP. Preencha manualmente.");
+        console.error(error);
+      } finally {
+        setIsSearchingCEP(false);
+      }
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -171,7 +206,15 @@ export function UserDialog({
                     <FormItem>
                       <FormLabel>Telefone *</FormLabel>
                       <FormControl>
-                        <Input placeholder="(11) 98765-4321" {...field} />
+                        <Input
+                          placeholder="(11) 98765-4321"
+                          {...field}
+                          onChange={(e) => {
+                            const masked = phoneMask(e.target.value);
+                            field.onChange(masked);
+                          }}
+                          maxLength={15}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -184,7 +227,15 @@ export function UserDialog({
                     <FormItem>
                       <FormLabel>CPF *</FormLabel>
                       <FormControl>
-                        <Input placeholder="123.456.789-00" {...field} />
+                        <Input
+                          placeholder="123.456.789-00"
+                          {...field}
+                          onChange={(e) => {
+                            const masked = cpfMask(e.target.value);
+                            field.onChange(masked);
+                          }}
+                          maxLength={14}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -214,6 +265,42 @@ export function UserDialog({
 
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold">Endereço</h3>
+
+                {/* CEP em primeiro lugar */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="address.zipCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CEP *</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              placeholder="01234-567"
+                              {...field}
+                              onChange={(e) => {
+                                const formatted = formatCEP(e.target.value);
+                                field.onChange(formatted);
+                              }}
+                              onBlur={(e) => {
+                                field.onBlur();
+                                handleCEPSearch(e.target.value);
+                              }}
+                              maxLength={9}
+                              disabled={isSearchingCEP}
+                            />
+                            {isSearchingCEP && (
+                              <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
@@ -222,7 +309,11 @@ export function UserDialog({
                       <FormItem className="md:col-span-2">
                         <FormLabel>Rua *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Rua das Flores" {...field} />
+                          <Input
+                            placeholder="Rua das Flores"
+                            {...field}
+                            disabled={isSearchingCEP}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -251,7 +342,11 @@ export function UserDialog({
                       <FormItem>
                         <FormLabel>Bairro *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Centro" {...field} />
+                          <Input
+                            placeholder="Centro"
+                            {...field}
+                            disabled={isSearchingCEP}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -264,7 +359,11 @@ export function UserDialog({
                       <FormItem>
                         <FormLabel>Cidade *</FormLabel>
                         <FormControl>
-                          <Input placeholder="São Paulo" {...field} />
+                          <Input
+                            placeholder="São Paulo"
+                            {...field}
+                            disabled={isSearchingCEP}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -277,27 +376,18 @@ export function UserDialog({
                       <FormItem>
                         <FormLabel>Estado *</FormLabel>
                         <FormControl>
-                          <Input placeholder="SP" maxLength={2} {...field} />
+                          <Input
+                            placeholder="SP"
+                            maxLength={2}
+                            {...field}
+                            disabled={isSearchingCEP}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name="address.zipCode"
-                  render={({ field }) => (
-                    <FormItem className="md:w-1/3">
-                      <FormLabel>CEP *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="01234-567" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
               <FormField
@@ -381,10 +471,27 @@ export function UserDialog({
                   type="button"
                   variant="outline"
                   onClick={() => onOpenChange(false)}
+                  className="cursor-pointer"
+                  disabled={isLoading}
                 >
                   Cancelar
                 </Button>
-                <Button type="submit">{user ? "Atualizar" : "Criar"}</Button>
+                <Button
+                  className="cursor-pointer"
+                  type="submit"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {user ? "Atualizando..." : "Criando..."}
+                    </>
+                  ) : user ? (
+                    "Atualizar"
+                  ) : (
+                    "Criar"
+                  )}
+                </Button>
               </div>
             </form>
           </Form>

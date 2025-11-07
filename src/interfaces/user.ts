@@ -22,3 +22,24 @@ export interface User {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface UserFormattedDataProps {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  cpf: string;
+  age: number;
+  address: {
+    street: string;
+    number: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
+  type: UserType;
+  clientIds: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
