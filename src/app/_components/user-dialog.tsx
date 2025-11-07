@@ -100,9 +100,8 @@ export function UserDialog({
   }, [user, form]);
 
   const watchType = form.watch("type");
-  const watchClientIds = form.watch("clientIds");
 
-  const onFormSubmit = (data: any) => {
+  const onFormSubmit = (data: UserFormData) => {
     try {
       const validatedData = userSchema.parse(data);
       onSubmit(validatedData);

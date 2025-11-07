@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { User } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const formattedUsers = users.map((user: any) => ({
+    const formattedUsers = users.map((user: User) => ({
       id: user.id,
       name: user.name,
       email: user.email,
@@ -98,9 +99,8 @@ export async function POST(request: NextRequest) {
     };
 
     return NextResponse.json(formattedUser, { status: 201 });
-  } catch (error: any) {
-    console.error("Erro ao criar usuário:", error);
-
+  } catch (error) {
+    // @ts-expect-error Prisma error codes are not typed in the error object
     if (error.code === "P2002") {
       return NextResponse.json(
         { error: "Email ou CPF já cadastrado" },

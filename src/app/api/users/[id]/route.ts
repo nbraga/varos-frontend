@@ -3,11 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const user = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!user) {
@@ -51,13 +52,14 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json();
+    const { id } = await params;
 
     const user = await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name: body.name,
         email: body.email,
@@ -98,9 +100,10 @@ export async function PUT(
     };
 
     return NextResponse.json(formattedUser);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Erro ao atualizar usuário:", error);
 
+    // @ts-expect-error Prisma error codes are not typed in the error object
     if (error.code === "P2025") {
       return NextResponse.json(
         { error: "Usuário não encontrado" },
@@ -108,6 +111,7 @@ export async function PUT(
       );
     }
 
+    // @ts-expect-error Prisma error codes are not typed in the error object
     if (error.code === "P2002") {
       return NextResponse.json(
         { error: "Email ou CPF já cadastrado" },
@@ -124,17 +128,19 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     await prisma.user.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ message: "Usuário deletado com sucesso" });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Erro ao deletar usuário:", error);
 
+    // @ts-expect-error Prisma error codes are not typed in the error object
     if (error.code === "P2025") {
       return NextResponse.json(
         { error: "Usuário não encontrado" },
