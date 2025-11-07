@@ -21,33 +21,32 @@ export async function fetchUsers(
   }
 ): Promise<FetchUsersResponse> {
   try {
-    const [users, totalItems] = await Promise.all([
-      prisma.user.findMany({
-        where: {
-          ...(params.search && {
-            OR: [
-              { name: { contains: params.search, mode: "insensitive" } },
-              { email: { contains: params.search, mode: "insensitive" } },
-              { cpf: { contains: params.search, mode: "insensitive" } },
-            ],
-          }),
-        },
-        orderBy: {
-          createdAt: params.order === "asc" ? "asc" : "desc",
-        },
-      }),
-      prisma.user.count({
-        where: {
-          ...(params.search && {
-            OR: [
-              { name: { contains: params.search, mode: "insensitive" } },
-              { email: { contains: params.search, mode: "insensitive" } },
-              { cpf: { contains: params.search, mode: "insensitive" } },
-            ],
-          }),
-        },
-      }),
-    ]);
+    const users = await prisma.user.findMany({
+      where: {
+        ...(params.search && {
+          OR: [
+            { name: { contains: params.search, mode: "insensitive" } },
+            { email: { contains: params.search, mode: "insensitive" } },
+            { cpf: { contains: params.search, mode: "insensitive" } },
+          ],
+        }),
+      },
+      orderBy: {
+        createdAt: params.order === "asc" ? "asc" : "desc",
+      },
+    });
+
+    const totalItems = await prisma.user.count({
+      where: {
+        ...(params.search && {
+          OR: [
+            { name: { contains: params.search, mode: "insensitive" } },
+            { email: { contains: params.search, mode: "insensitive" } },
+            { cpf: { contains: params.search, mode: "insensitive" } },
+          ],
+        }),
+      },
+    });
 
     const formattedUsers: UserFormattedDataProps[] = users.map(
       (user: User) => ({
@@ -65,9 +64,7 @@ export async function fetchUsers(
           state: user.state,
           zipCode: user.zipCode,
         },
-        type: (user.type === "CLIENTE" ? "Cliente" : "Consultor") as
-          | "Cliente"
-          | "Consultor",
+        type: user.type === "CLIENTE" ? "Cliente" : "Consultor",
         clientIds: user.clientIds,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
@@ -75,11 +72,12 @@ export async function fetchUsers(
     );
 
     return {
-      users: formattedUsers,
+      users: formattedUsers ?? [],
       totalPages: Math.ceil(totalItems / (params.limit || 10)),
       totalItems: totalItems,
     };
   } catch (error) {
+    console.log("🚀 ~ fetchUsers ~ error:", error);
     if (error instanceof AxiosError) {
       if (error.response?.status && error.response.status >= 500) {
         throw new Error("Erro interno do servidor");

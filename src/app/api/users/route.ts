@@ -11,11 +11,6 @@ export async function GET(request: NextRequest) {
       order: (searchParams.get("order") as "asc" | "desc") || "asc",
       page: Number(searchParams.get("page")) || 1,
       limit: Number(searchParams.get("limit")) || 10,
-      type:
-        searchParams.get("type") === "Cliente" ||
-        searchParams.get("type") === "Consultor"
-          ? (searchParams.get("type") as "Cliente" | "Consultor")
-          : undefined,
     });
 
     return NextResponse.json(result);
