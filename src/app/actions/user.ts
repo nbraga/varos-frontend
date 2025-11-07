@@ -31,13 +31,12 @@ export async function fetchUsers(
               { cpf: { contains: params.search, mode: "insensitive" } },
             ],
           }),
-          // ...(params.type && { type: params.type as "CLIENTE" | "CONSULTOR" }),
         },
         orderBy: {
           createdAt: params.order === "asc" ? "asc" : "desc",
         },
       }),
-      await prisma.user.count({
+      prisma.user.count({
         where: {
           ...(params.search && {
             OR: [
@@ -46,7 +45,6 @@ export async function fetchUsers(
               { cpf: { contains: params.search, mode: "insensitive" } },
             ],
           }),
-          // ...(params.type && { type: params.type as "CLIENTE" | "CONSULTOR" }),
         },
       }),
     ]);

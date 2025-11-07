@@ -55,7 +55,7 @@ export function UserDataTableActions<TData>({
         <Button
           variant="outline"
           size="sm"
-          className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+          className="text-destructive border-destructive/50 hover:bg-destructive hover:text-white"
           onClick={() => setShowDeleteDialog(true)}
         >
           <Trash2 className="mr-2 h-4 w-4" />
